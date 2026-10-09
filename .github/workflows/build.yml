@@ -1,0 +1,28 @@
+# 每次 push 都在 Ubuntu 上編譯並實際跑一次模擬，確認程式可以編譯與執行
+name: build-and-run
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: make
+
+      - name: Run p1p2 simulation
+        run: make run RUN_SECS=20
+
+      - name: Run p2-throughput simulation
+        run: make run-p2 RUN_SECS=20
+
+      - name: Show output
+        run: tail -n 15 logs/*.log
+
+      # 保留執行紀錄，可下載回來畫圖（scripts/plot_results.py）
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simulation-logs
+          path: logs/*.log
