@@ -59,6 +59,16 @@ AvgETE:15.543ms             QueuingDelay:30.167ms
 Throughput:16.802kbps       AvgQueuingDelay:30.373ms
 ```
 
+### 結果分析
+
+`make run` 後執行 `python3 scripts/plot_results.py`，會把 log 整理成 CSV 並畫圖（下圖由 GitHub Actions 實際執行產生，原始數據在 [`docs/`](docs)）：
+
+![RTT 與排隊延遲](docs/delay.png)
+
+- **Client RTT**：第一個 ACK 約 1 秒（啟動階段），之後穩定在約 30.5 ms，幾乎等於 router 的 30 ms 服務時間；EWMA 平均 ETE 隨之平滑收斂到約 15 ms
+- **TCP 佇列**：封包依 ACK 逐一送出，佇列長度維持 0，排隊延遲 ≈ 服務時間 30 ms
+- **UDP 佇列**：沒有流量控制，封包抵達速度比 30 ms 服務時間快，佇列不斷累積，排隊延遲一路上升到約 650 ms，送完後才逐漸下降——這正是 TCP 流量控制與 UDP 差異的直接證據
+
 ### 學到的東西
 
 - 連線導向（TCP）與非連線（UDP）的 socket 程式設計
@@ -97,6 +107,16 @@ make clean
 ```
 
 GitHub Actions builds the project and runs a simulation on Ubuntu on every push (`.github/workflows/build.yml`).
+
+### Results
+
+Run `python3 scripts/plot_results.py` after `make run` to turn the logs into CSV files and a chart (this one was produced by GitHub Actions; raw data in [`docs/`](docs)):
+
+![RTT and queuing delay](docs/delay.png)
+
+- **Client RTT** is about 1 s for the first ACK (start-up), then steady at ~30.5 ms, essentially the router's 30 ms service time.
+- **TCP queue**: packets are released one ACK at a time, so the queue stays empty and the delay equals the 30 ms service time.
+- **UDP queue**: with no flow control, packets arrive faster than they are served, the queue builds up and the delay climbs to ~650 ms before draining — a direct illustration of TCP flow control versus UDP.
 
 ### What I learned
 

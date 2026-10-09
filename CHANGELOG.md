@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-09 — README 加入實驗結果圖表
+
+- **內容**：把 GitHub Actions 實際跑出來的結果（`docs/delay.png`、`docs/client_metrics.csv`、`docs/router_metrics.csv`）放進 repo，README 新增「結果分析」段落，說明 RTT、TCP／UDP 佇列排隊延遲的差異。
+- **原因**：讓 README 一打開就有圖，並展現對結果的分析。
+- **測試**：圖表與數據來自 CI 實際執行（ubuntu-latest）。
+
 ## 2026-10-09 — 加入結果分析與圖表
 
 - **內容**：新增 `scripts/plot_results.py`，把 `make run` 的 client／router log 解析成 `results/client_metrics.csv`、`results/router_metrics.csv`，並畫出 RTT／ETE 與排隊延遲的折線圖 `results/delay.png`；CI 跑完模擬後自動畫圖並上傳。
