@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-09 — 抽出共用標頭檔 packet.h（並修正封包大小不一致）
+
+- **內容**：新增 `p1p2/packet.h`，集中 MTU、PACKET_SIZE、port、虛擬 IP 與 `IPHeader`／`UDPHeader`／`MACHeader`／`TCPHeader`／`Packet` 定義；client、server、router 刪除各自的副本改為 include，寫死的虛擬 IP 改用常數。加上 `static_assert` 確保 `sizeof(Packet) <= PACKET_SIZE`。Makefile 加上對 `packet.h` 的相依。
+- **原因**：三份結構原本不一致：router 的 `IPHeader` 多一個 `options` 欄位，三邊 `Packet` 的 payload 分別是 1472／1460／1472 bytes。client 回傳的 ACK 有 1520 bytes，但 router 佇列每格只有 1518 bytes，`enqueue` 的 `memcpy` 會寫出陣列 2 bytes。統一後封包為 48 bytes 表頭＋1468 bytes payload（1516 bytes）。
+- **測試**：本機無法編譯 Linux socket 程式；由 GitHub Actions 編譯並執行模擬驗證（結果見下一筆紀錄）。
+
 ## 2026-10-09 — p1p2 三支程式補上檔案說明註解
 
 - **內容**：`p1p2/client.cpp`、`server.cpp`、`router.c` 開頭加上說明：各執行緒的角色、使用的 port、量測哪些指標（p2-throughput 版本原本就有完整檔頭）。

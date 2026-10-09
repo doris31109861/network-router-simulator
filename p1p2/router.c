@@ -17,54 +17,13 @@
 #include <arpa/inet.h>   // IP 地址轉換函式 (inet_pton 等)
 #include <sys/time.h>    // 時間相關函式 (gettimeofday)
 #include <stdbool.h>     // 布林值定義
+#include "packet.h"    // 共用的常數與封包表頭定義
 
-#define MTU 1500            // 最大傳輸單元 (Maximum Transmission Unit)
-#define PACKET_SIZE 1518    // 封包總大小 (包含 Ethernet header)
-#define QUEUE_SIZE 100      // 佇列 (Queue) 最大容量
-#define LOOP_COUNT 23       // 模擬傳送封包的次數
 
 #define SERVER_IP "127.0.0.1" // 伺服器實體 IP (本機回環)
-#define SERVER_PORT 9000      // 伺服器監聽埠號
-#define ROUTER_PORT 9002      // 路由器監聽埠號
-#define CLIENT_PORT 9003      // 客戶端接收埠號
-#define CLIENTTWO_PORT 9004   // 第二客戶端埠號 (備用)
 
 // 定義虛擬 IP 用於路由邏輯判斷 (模擬網路層轉發)
-#define SERVER_VIRTUAL_IP 0x0A115945 
-#define CLIENT_VIRTUAL_IP 0x0A000301
-#define CLIENT2_VIRTUAL_IP 0x0A000302
 
-// --- 自訂封包標頭結構 ---
-typedef struct IPHeader {
-    uint8_t version_ihl;
-	uint8_t type_of_service;
-	uint16_t total_length;
-	uint16_t identification;
-    uint16_t flags_fragment_offset;
-	uint8_t time_to_live;
-	uint8_t protocol;
-	uint16_t header_checksum;
-    uint32_t source_ip;
-	uint32_t destination_ip;
-	uint32_t options;
-}IPHeader;
-typedef struct UDPHeader {
-    uint32_t source_port : 16, dest_port : 16; 
-	uint32_t Segment_Length : 16, Checksum : 16;
-}UDPHeader;
-typedef struct MACHeader {
-    uint8_t sour_mac[6]; 
-	uint8_t des_mac[6]; 
-	uint16_t fram_typ; 
-	uint32_t crc;
-}MACHeader;
-// 完整的封包結構
-typedef struct Packet {
-    struct IPHeader ipheader; 
-	struct UDPHeader udpheader;
-	struct MACHeader macheader;
-    char buffer[MTU - 28]; // 剩餘空間作為 Payload
-}Packet;
 
 // --- 佇列項目結構 ---
 typedef struct QueueItem {

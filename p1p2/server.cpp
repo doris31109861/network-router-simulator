@@ -16,17 +16,12 @@
 #include <pthread.h>  
 #include <iostream>
 #include <sys/time.h>
+#include "packet.h"    // 共用的常數與封包表頭定義
 
 using namespace std;
 
-#define MTU 1500
-#define PACKET_SIZE 1518
-#define LOOP_COUNT 23 
 
 #define CLIENT_IP "127.0.0.1"
-#define SERVER_PORT 9000 // Server 監聽 Port
-#define ROUTER_PORT 9002 // Router Port
-#define QUEUE_SIZE 100
 
 // --- 時間戳佇列 (用於 UDP RTT 計算) ---
 struct Queue {
@@ -69,45 +64,6 @@ struct timeval dequeue(struct Queue* queue) {
     return item;
 }
 
-// 封包表頭結構
-typedef struct IPHeader {
-    uint8_t version_ihl;
-	uint8_t type_of_service;
-	uint16_t total_length;
-	uint16_t identification;
-    uint16_t flags_fragment_offset;
-	uint8_t time_to_live;
-	uint8_t protocol;
-	uint16_t header_checksum;
-    uint32_t source_ip;
-	uint32_t destination_ip;
-}IPHeader;
-typedef struct UDPHeader {
-    uint32_t source_port : 16, dest_port : 16;
-	uint32_t Segment_Length : 16, Checksum : 16;
-}UDPHeader;
-typedef struct MACHeader {
-    uint8_t sour_mac[6];
-	uint8_t des_mac[6];
-	uint16_t fram_typ;
-	uint32_t crc;
-}MACHeader;
-typedef struct TCPHeader {
-    uint16_t source_port;
-	uint16_t destination_port;
-	uint32_t sequence_number;
-	uint32_t ack_number;
-    uint16_t offset_reserved_flags;
-	uint16_t window_size;
-	uint16_t checksum;
-	uint16_t urgent_pointer;
-}TCPHeader;
-typedef struct Packet {
-    struct IPHeader ipheader; 
-	struct UDPHeader udpheader; 
-	struct MACHeader macheader;
-    char buffer[MTU - 40];
-}Packet;
 
 struct Queue timestampQueue; // 存放 UDP 發送時間
 int udp_sock_fd_global;      // 全域 UDP socket 供發送與接收執行緒使用
@@ -119,8 +75,8 @@ void udp_msg_sender(struct sockaddr* dst) {
     machdr->fram_typ = 0x0000;
     struct IPHeader* iphdr = (struct IPHeader*)malloc(sizeof(struct IPHeader));
     iphdr->version_ihl = 0x45; iphdr->total_length = MTU; iphdr->protocol = 0x11; // Protocol 17 = UDP
-    iphdr->source_ip = 0x0A115945; // Server 虛擬 IP
-    iphdr->destination_ip = 0x0A000301; // Client 虛擬 IP
+    iphdr->source_ip = SERVER_VIRTUAL_IP; // Server 虛擬 IP
+    iphdr->destination_ip = CLIENT_VIRTUAL_IP; // Client 虛擬 IP
     struct UDPHeader* udphdr = (struct UDPHeader*)malloc(sizeof(struct UDPHeader));
     udphdr->source_port = 10000; udphdr->dest_port = 10010;
 

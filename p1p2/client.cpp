@@ -16,18 +16,13 @@
 #include <pthread.h>  
 #include <iostream>
 #include <sys/time.h> 
+#include "packet.h"    // 共用的常數與封包表頭定義
 
 using namespace std;
 
-#define MTU 1500
-#define PACKET_SIZE 1518
 #define BUFF_LEN 10000 
-#define LOOP_COUNT 23
 
 #define SERVER_IP "127.0.0.1"
-#define ROUTER_PORT 9002 // 連線目標是 Router
-#define CLIENT_PORT 9003 // 接收 UDP 的 Port
-#define QUEUE_SIZE 100
 
 // --- 用於計算 RTT 的時間戳佇列 ---
 // 紀錄發送時間，收到 ACK 時取出對比
@@ -71,45 +66,6 @@ struct timeval dequeue(struct Queue* queue) {
     return item;
 }
 
-// 封包表頭定義 (需與 Router/Server 一致)
-typedef struct IPHeader {
-    uint8_t version_ihl; 
-	uint8_t type_of_service;
-	uint16_t total_length; 
-	uint16_t identification;
-    uint16_t flags_fragment_offset;
-	uint8_t time_to_live; 
-	uint8_t protocol; 
-	uint16_t header_checksum;
-    uint32_t source_ip; 
-	uint32_t destination_ip;
-}IPHeader;
-typedef struct UDPHeader {
-    uint32_t source_port : 16, dest_port : 16; 
-	uint32_t Segment_Length : 16, Checksum : 16;
-}UDPHeader;
-typedef struct MACHeader {
-    uint8_t sour_mac[6];
-	uint8_t des_mac[6]; 
-	uint16_t fram_typ; 
-	uint32_t crc;
-}MACHeader;
-typedef struct TCPHeader {
-    uint16_t source_port; 
-	uint16_t destination_port; 
-	uint32_t sequence_number; 
-	uint32_t ack_number;
-    uint16_t offset_reserved_flags; 
-	uint16_t window_size;
-	uint16_t checksum; 
-	uint16_t urgent_pointer;
-}TCPHeader;
-typedef struct Packet {
-    struct IPHeader ipheader; 
-	struct UDPHeader udpheader; 
-	struct MACHeader macheader;
-	char buffer[PACKET_SIZE - 46];
-}Packet;
 
 char last_payload[5000] = "`abc"; // 初始 Payload
 struct Queue tcpQueue;
@@ -178,7 +134,7 @@ void rcv_UDPpacket(int fd, struct sockaddr_in* router_addr) {
 			printf("client rcv UDP packet %d !\n", cnt); 
 		}
         // 回傳 ACK 給 Server (透過 Router)
-        packet->ipheader.destination_ip = 0x0A115945; // 設定目的 IP 為 Server 的虛擬 IP
+        packet->ipheader.destination_ip = SERVER_VIRTUAL_IP; // 設定目的 IP 為 Server 的虛擬 IP
         sendto(fd, packet, sizeof(*packet), 0, (struct sockaddr*)router_addr, sizeof(*router_addr));
     }
 }

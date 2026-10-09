@@ -27,13 +27,13 @@ $(BIN) $(LOGS):
 	mkdir -p $@
 
 # ---- p1p2：router 為 C，server / client 為 C++ ----
-$(BIN)/p1p2-router: p1p2/router.c | $(BIN)
+$(BIN)/p1p2-router: p1p2/router.c p1p2/packet.h | $(BIN)
 	$(CC) $(CFLAGS) $< -o $@ $(LDLIBS)
 
-$(BIN)/p1p2-server: p1p2/server.cpp | $(BIN)
+$(BIN)/p1p2-server: p1p2/server.cpp p1p2/packet.h | $(BIN)
 	$(CXX) $(CFLAGS) $< -o $@ $(LDLIBS)
 
-$(BIN)/p1p2-client: p1p2/client.cpp | $(BIN)
+$(BIN)/p1p2-client: p1p2/client.cpp p1p2/packet.h | $(BIN)
 	$(CXX) $(CFLAGS) $< -o $@ $(LDLIBS)
 
 # ---- p2-throughput：三支都是 C ----
