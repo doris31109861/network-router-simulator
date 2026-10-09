@@ -339,7 +339,8 @@ void* udp_sender(void* argu) {
     return NULL;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    parse_args(argc, argv); // -n 封包數、-p 基準 port（見 packet.h）
     // 初始化佇列
     initQueue(&tcpQueue);
     initQueue(&udpQueue);

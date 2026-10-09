@@ -15,6 +15,12 @@ jobs:
       - name: Run p1p2 simulation
         run: make run RUN_SECS=20
 
+      # 用命令列參數換 port 與封包數再跑一次，確認參數有作用（10 個 TCP ACK）
+      - name: Run p1p2 with custom args
+        run: |
+          mkdir -p logs/args && make run ARGS="-n 10 -p 9100" RUN_SECS=15 LOGS=logs/args
+          test "$(grep -c 'TCP ACK' logs/args/p1p2-client.log)" -eq 10
+
       - name: Run p2-throughput simulation
         run: make run-p2 RUN_SECS=20
 

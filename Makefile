@@ -2,6 +2,7 @@
 #
 #   make            編譯 p1p2 與 p2-throughput（輸出到 bin/）
 #   make run        執行 p1p2：依序啟動 server → router → client，輸出存到 logs/
+#                   可加參數：make run ARGS="-n 50 -p 9100"（封包數、基準 port）
 #   make run-p2     執行 p2-throughput 版本
 #   make clean      刪除 bin/ 與 logs/
 #
@@ -15,6 +16,8 @@ BIN      := bin
 LOGS     := logs
 # 每次模擬最多跑幾秒（server / router 的接收迴圈不會自己結束，時間到就關閉）
 RUN_SECS ?= 20
+# 傳給 p1p2 三支程式的參數，例如 make run ARGS="-n 50 -p 9100"
+ARGS ?=
 
 P1 := $(BIN)/p1p2-server $(BIN)/p1p2-router $(BIN)/p1p2-client
 P2 := $(BIN)/p2-server $(BIN)/p2-router $(BIN)/p2-client
@@ -45,18 +48,18 @@ $(BIN)/p2-%: p2-throughput/%.c | $(BIN)
 # stdbuf -oL 讓 printf 逐行寫入 log，被 kill 時不會遺失緩衝區內容。
 define simulate
 	@echo "== $(1): server → router → client（最多 $(RUN_SECS) 秒）"
-	@stdbuf -oL ./$(BIN)/$(1)-server > $(LOGS)/$(1)-server.log 2>&1 & echo $$! > $(LOGS)/.server.pid
+	@stdbuf -oL ./$(BIN)/$(1)-server $(2) > $(LOGS)/$(1)-server.log 2>&1 & echo $$! > $(LOGS)/.server.pid
 	@sleep 1
-	@stdbuf -oL ./$(BIN)/$(1)-router > $(LOGS)/$(1)-router.log 2>&1 & echo $$! > $(LOGS)/.router.pid
+	@stdbuf -oL ./$(BIN)/$(1)-router $(2) > $(LOGS)/$(1)-router.log 2>&1 & echo $$! > $(LOGS)/.router.pid
 	@sleep 1
-	@timeout $(RUN_SECS) stdbuf -oL ./$(BIN)/$(1)-client > $(LOGS)/$(1)-client.log 2>&1 || true
+	@timeout $(RUN_SECS) stdbuf -oL ./$(BIN)/$(1)-client $(2) > $(LOGS)/$(1)-client.log 2>&1 || true
 	@kill $$(cat $(LOGS)/.server.pid) $$(cat $(LOGS)/.router.pid) 2>/dev/null || true
 	@rm -f $(LOGS)/.server.pid $(LOGS)/.router.pid
 	@echo "完成，輸出在 $(LOGS)/$(1)-{server,router,client}.log"
 endef
 
 run: $(P1) | $(LOGS)
-	$(call simulate,p1p2)
+	$(call simulate,p1p2,$(ARGS))
 
 run-p2: $(P2) | $(LOGS)
 	$(call simulate,p2)

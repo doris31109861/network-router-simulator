@@ -41,11 +41,12 @@
 ```bash
 make            # 一次編譯 p1p2 與 p2-throughput 共 6 支程式（輸出到 bin/）
 make run        # 依序啟動 server → router → client，輸出存到 logs/p1p2-*.log
+make run ARGS="-n 50 -p 9100"   # 指定封包數與基準 port（server 用 9100、router 9102、client 9103）
 make run-p2     # 執行 p2-throughput 版本
 make clean
 ```
 
-也可以手動在三個終端機依序執行 `bin/p1p2-server`、`bin/p1p2-router`、`bin/p1p2-client`。
+也可以手動在三個終端機依序執行 `bin/p1p2-server`、`bin/p1p2-router`、`bin/p1p2-client`（三支要給相同的 `-n`／`-p` 參數）。
 每次 push 都會由 GitHub Actions 在 Ubuntu 上自動編譯並跑一次模擬（`.github/workflows/build.yml`）。
 
 ### 執行結果（節錄）
@@ -102,6 +103,7 @@ A three-node network simulation (**client ↔ router ↔ server**) that runs on 
 ```bash
 make            # builds all six programs (p1p2 + p2-throughput) into bin/
 make run        # starts server → router → client, logs go to logs/p1p2-*.log
+make run ARGS="-n 50 -p 9100"   # packet count and base port (server 9100, router 9102, client 9103)
 make run-p2     # runs the p2-throughput version
 make clean
 ```

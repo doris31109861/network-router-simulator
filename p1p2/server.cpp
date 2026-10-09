@@ -223,7 +223,8 @@ void* udp_socket(void* argu) {
     return NULL;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    parse_args(argc, argv); // -n 封包數、-p 基準 port（見 packet.h）
     initQueue(&timestampQueue);
     pthread_t thread1, thread2;
     // 啟動 TCP 和 UDP 處理執行緒
