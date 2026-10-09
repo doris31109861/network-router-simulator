@@ -3,7 +3,7 @@ plot_results.py — 把模擬輸出的 log 整理成 CSV，並畫成折線圖
 
 讀取 `make run` 產生的 logs/p1p2-client.log 與 logs/p1p2-router.log：
   - client：每個 ACK 的 RTT、ETE（≈ RTT/2）、EWMA 平均 ETE、Throughput
-  - router：每個封包的 QueuingDelay 與 EWMA 平均 AvgQueuingDelay
+  - router：每個封包的 QueuingDelay 與 EWMA 平均 AvgQueuingDelay，依 TCP／UDP 佇列分開（log 中的 -----SendTCP----- / -----SendUDP----- 標頭）
 輸出：
   results/client_metrics.csv、results/router_metrics.csv
   results/delay.png（RTT / ETE / 排隊延遲隨封包序號的變化）
@@ -21,6 +21,8 @@ from pathlib import Path
 
 # 每一行的格式都是「名稱:數值單位」，例如 "RTT:30.473ms"、"Throughput:16.802kbps"
 LINE_RE = re.compile(r"^\s*(\w+)\s*:\s*([-+]?\d+(?:\.\d+)?)")
+# router 每筆紀錄前的標頭，用來分辨是 TCP 還是 UDP 佇列
+SECTION_RE = re.compile(r"^-----Send(TCP|UDP)-----")
 
 
 def parse_log(path, fields, start_field):
@@ -28,8 +30,12 @@ def parse_log(path, fields, start_field):
 
     每遇到 start_field（例如 RTT）就開始一筆新紀錄，之後出現的 fields 都歸到這一筆。
     """
-    rows, cur = [], None
+    rows, cur, section = [], None, ""
     for line in Path(path).read_text(encoding="utf-8", errors="ignore").splitlines():
+        sec = SECTION_RE.match(line)
+        if sec:
+            section = sec.group(1)
+            continue
         m = LINE_RE.match(line)
         if not m or m.group(1) not in fields:
             continue
@@ -37,7 +43,7 @@ def parse_log(path, fields, start_field):
         if key == start_field:
             if cur:
                 rows.append(cur)
-            cur = {}
+            cur = {"Queue": section} if section else {}
         if cur is not None:
             cur[key] = value
     if cur:
@@ -64,12 +70,12 @@ def main():
     out.mkdir(exist_ok=True)
 
     client_fields = ["RTT", "ETE", "AvgETE", "Throughput"]
-    router_fields = ["QueuingTime", "ServiceTime", "QueuingDelay", "AvgQueuingDelay"]
+    router_fields = ["QueueLength", "QueuingTime", "ServiceTime", "QueuingDelay", "AvgQueuingDelay"]
     client = parse_log(Path(args.logs) / f"{args.prefix}-client.log", client_fields, "RTT")
-    router = parse_log(Path(args.logs) / f"{args.prefix}-router.log", router_fields, "QueuingTime")
+    router = parse_log(Path(args.logs) / f"{args.prefix}-router.log", router_fields, "QueueLength")
 
     write_csv(out / "client_metrics.csv", client, client_fields)
-    write_csv(out / "router_metrics.csv", router, router_fields)
+    write_csv(out / "router_metrics.csv", router, ["Queue"] + router_fields)
     print(f"client: {len(client)} 筆, router: {len(router)} 筆 → {out}/*.csv")
 
     import matplotlib
@@ -86,11 +92,15 @@ def main():
     ax1.legend()
     ax1.grid(alpha=0.3)
 
-    # 右圖：router 端的排隊延遲（含 30ms 服務時間）與 EWMA 平均
-    for key in ("QueuingDelay", "AvgQueuingDelay"):
-        ys = [r[key] for r in router if key in r]
-        ax2.plot(range(1, len(ys) + 1), ys, marker="o", markersize=3, label=key)
-    ax2.set(title="Router: queuing delay", xlabel="packet #", ylabel="ms")
+    # 右圖：router 端 TCP、UDP 兩個佇列各自的排隊延遲（含 30ms 服務時間），實線為每個封包、虛線為 EWMA 平均
+    for queue in ("TCP", "UDP"):
+        rows = [r for r in router if r.get("Queue") == queue]
+        xs = range(1, len(rows) + 1)
+        line, = ax2.plot(xs, [r["QueuingDelay"] for r in rows], marker="o", markersize=3,
+                         label=f"{queue} QueuingDelay")
+        ax2.plot(xs, [r["AvgQueuingDelay"] for r in rows], linestyle="--", color=line.get_color(),
+                 label=f"{queue} AvgQueuingDelay")
+    ax2.set(title="Router: queuing delay per queue", xlabel="packet # in queue", ylabel="ms")
     ax2.legend()
     ax2.grid(alpha=0.3)
 
