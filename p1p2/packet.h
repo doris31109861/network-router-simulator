@@ -9,6 +9,7 @@
 #define PACKET_H
 
 #include <stdint.h>
+#include <string.h>   /* memcpy */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>   /* getopt */
@@ -35,7 +36,7 @@ static int g_port_base = 9000;
 #define CLIENTTWO_PORT (g_port_base + 4)        // 第二個 Client（備用，預設 9004）
 
 /* 解析 -n / -p 參數；給 -h 或不合法的值時印出用法並結束 */
-static void parse_args(int argc, char *argv[]) {
+static inline void parse_args(int argc, char *argv[]) {
     int opt;
     while ((opt = getopt(argc, argv, "n:p:h")) != -1) {
         switch (opt) {
@@ -109,5 +110,34 @@ static_assert(sizeof(Packet) <= PACKET_SIZE, "Packet larger than PACKET_SIZE");
 #else
 _Static_assert(sizeof(Packet) <= PACKET_SIZE, "Packet larger than PACKET_SIZE");
 #endif
+
+/* ---- IP 表頭 checksum（RFC 1071：16-bit 一補數和再取一補數） ----
+ * 計算時 checksum 欄位視為 0；接收端把整個表頭（含 checksum）加總，結果應為 0xFFFF。
+ * 以 memcpy 逐 16 bit 取值，避免對 struct 做型別轉換的 aliasing 問題。
+ */
+static inline uint16_t ip_sum_words(const IPHeader *h) {
+    unsigned char bytes[sizeof(IPHeader)];
+    uint32_t sum = 0;
+    memcpy(bytes, h, sizeof(IPHeader));
+    for (size_t i = 0; i + 1 < sizeof(IPHeader); i += 2) {
+        uint16_t word;
+        memcpy(&word, bytes + i, 2);
+        sum += word;
+    }
+    while (sum >> 16) sum = (sum & 0xFFFF) + (sum >> 16);   /* 進位折回低 16 位元 */
+    return (uint16_t)sum;
+}
+
+/* 計算並回傳 checksum（不修改傳入的表頭） */
+static inline uint16_t ip_checksum(const IPHeader *h) {
+    IPHeader tmp = *h;
+    tmp.header_checksum = 0;
+    return (uint16_t)~ip_sum_words(&tmp);
+}
+
+/* 驗證收到的表頭：含 checksum 加總為 0xFFFF 表示沒有被改壞 */
+static inline int ip_checksum_ok(const IPHeader *h) {
+    return ip_sum_words(h) == 0xFFFF;
+}
 
 #endif /* PACKET_H */

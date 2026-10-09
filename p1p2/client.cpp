@@ -94,11 +94,13 @@ void tcp_msg_sender(int fd) {
 
     // 填寫 IP 表頭
     struct IPHeader ipHeader;
+    memset(&ipHeader, 0, sizeof(ipHeader)); // 未設定的欄位（TOS、checksum）先清成 0
     ipHeader.version_ihl = 0x45; ipHeader.total_length = htons(sizeof(IPHeader) + sizeof(TCPHeader) + payload_length);
     ipHeader.identification = htons(0xAAAA); ipHeader.flags_fragment_offset = htons(0x4000);
     ipHeader.time_to_live = 64; ipHeader.protocol = 0x06; // Protocol 6 = TCP
     inet_pton(AF_INET, "10.17.164.10", &ipHeader.source_ip);
     inet_pton(AF_INET, "10.17.89.69", &ipHeader.destination_ip);
+    ipHeader.header_checksum = ip_checksum(&ipHeader); // 所有欄位填好後才計算 checksum
 
     // 填寫 TCP 表頭
     struct TCPHeader tcpHeader;
@@ -135,6 +137,7 @@ void rcv_UDPpacket(int fd, struct sockaddr_in* router_addr) {
 		}
         // 回傳 ACK 給 Server (透過 Router)
         packet->ipheader.destination_ip = SERVER_VIRTUAL_IP; // 設定目的 IP 為 Server 的虛擬 IP
+        packet->ipheader.header_checksum = ip_checksum(&packet->ipheader); // 改了目的 IP，checksum 要重算
         sendto(fd, packet, sizeof(*packet), 0, (struct sockaddr*)router_addr, sizeof(*router_addr));
     }
 }

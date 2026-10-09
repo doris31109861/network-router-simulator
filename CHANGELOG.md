@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-09 — 計算並驗證 IP header checksum
+
+- **內容**：`packet.h` 新增 `ip_checksum()`／`ip_checksum_ok()`（RFC 1071 16-bit 一補數和）。server 送出 UDP 封包、client 送出 TCP 封包及回傳 UDP ACK（改了目的 IP）時填入 checksum；router 在 TCP 接收與 UDP 轉送前驗證，錯誤時印出 `IPChecksum:BAD`。server 的表頭改用 `calloc`、client 的 IP 表頭先 `memset`，避免未設定欄位是記憶體殘值。CI 檢查 router log 中沒有任何 BAD。
+- **原因**：表頭原本有 checksum 欄位但從未計算。
+- **測試**：本機以 Wikipedia「IPv4 header checksum」範例表頭（4500 0073 … c0a8 00c7）驗證，C 與 C++ 都算出 b861，竄改一個欄位後驗證失敗；整體模擬由 CI 驗證。
+
 ## 2026-10-09 — 封包數與 port 改成命令列參數
 
 - **內容**：`packet.h` 新增 `parse_args()`：`-n <封包數>`、`-p <基準 port>`（Server = 基準、Router = +2、Client = +3），預設仍為 23 個封包、port 9000；`LOOP_COUNT` 與各 port 巨集改為讀取全域變數，三支程式的 `main` 開頭呼叫 `parse_args`。Makefile 新增 `ARGS` 變數（`make run ARGS="-n 50 -p 9100"`）。CI 多跑一次 `-n 10 -p 9100` 並檢查 client 收到 10 個 TCP ACK。

@@ -16,6 +16,10 @@ jobs:
         run: make run RUN_SECS=20
 
       # 用命令列參數換 port 與封包數再跑一次，確認參數有作用（10 個 TCP ACK）
+      # router 會驗證每個封包的 IP 表頭 checksum，不應該出現任何 BAD
+      - name: Check IP checksums
+        run: "! grep -q 'IPChecksum:BAD' logs/p1p2-router.log"
+
       - name: Run p1p2 with custom args
         run: |
           mkdir -p logs/args && make run ARGS="-n 10 -p 9100" RUN_SECS=15 LOGS=logs/args

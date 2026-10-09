@@ -12,7 +12,7 @@
 
 ### 特色
 
-- **自訂封包表頭**：自己定義 `MACHeader`、`IPHeader`、`UDPHeader` 與 TCP 表頭結構，封裝成 1518 bytes 的訊框（MTU 1500）；三支程式共用 `p1p2/packet.h`，並在編譯時檢查封包大小不超過佇列容量
+- **自訂封包表頭**：自己定義 `MACHeader`、`IPHeader`、`UDPHeader` 與 TCP 表頭結構，封裝成 1518 bytes 的訊框（MTU 1500）；三支程式共用 `p1p2/packet.h`，並在編譯時檢查封包大小不超過佇列容量；IP 表頭依 RFC 1071 計算 checksum，router 收到封包時驗證
 - **虛擬 IP 路由**：Router 讀取封包中的目的虛擬 IP，決定轉送給 Server 或兩個 Client 之一
 - **執行緒安全佇列**：以 `pthread_mutex_t` 與 `pthread_cond_t` 實作環狀緩衝區（生產者／消費者），TCP、UDP 各一個佇列
 - **多執行緒 Router**：5 個執行緒分別處理 TCP 接收、TCP 發送、ACK 轉送、UDP 接收、UDP 發送
@@ -84,7 +84,7 @@ A three-node network simulation (**client ↔ router ↔ server**) that runs on 
 
 ### Highlights
 
-- **Hand-built packet headers**: custom `MACHeader`, `IPHeader`, `UDPHeader` and TCP header structs packed into a 1518-byte frame (MTU 1500), shared by all three programs through `p1p2/packet.h` with a compile-time size check
+- **Hand-built packet headers**: custom `MACHeader`, `IPHeader`, `UDPHeader` and TCP header structs packed into a 1518-byte frame (MTU 1500), shared by all three programs through `p1p2/packet.h` with a compile-time size check; IP header checksums are computed per RFC 1071 and verified by the router
 - **Virtual-IP routing**: the router reads the destination virtual IP and forwards to the server or to one of two clients
 - **Thread-safe queues**: a circular buffer guarded by `pthread_mutex_t` and `pthread_cond_t` (producer/consumer), one for TCP and one for UDP
 - **Multi-threaded router**: five threads for TCP receive, TCP send, ACK forwarding, UDP receive and UDP send

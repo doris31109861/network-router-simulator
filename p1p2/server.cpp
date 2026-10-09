@@ -71,13 +71,13 @@ int udp_sock_fd_global;      // 全域 UDP socket 供發送與接收執行緒使
 // --- UDP 發送函式: 主動發送封包給 Client ---
 void udp_msg_sender(struct sockaddr* dst) {
     int payload_size;
-    struct MACHeader* machdr = (struct MACHeader*)malloc(sizeof(struct MACHeader));
+    struct MACHeader* machdr = (struct MACHeader*)calloc(1, sizeof(struct MACHeader)); // calloc：未設定的欄位為 0
     machdr->fram_typ = 0x0000;
-    struct IPHeader* iphdr = (struct IPHeader*)malloc(sizeof(struct IPHeader));
+    struct IPHeader* iphdr = (struct IPHeader*)calloc(1, sizeof(struct IPHeader));
     iphdr->version_ihl = 0x45; iphdr->total_length = MTU; iphdr->protocol = 0x11; // Protocol 17 = UDP
     iphdr->source_ip = SERVER_VIRTUAL_IP; // Server 虛擬 IP
     iphdr->destination_ip = CLIENT_VIRTUAL_IP; // Client 虛擬 IP
-    struct UDPHeader* udphdr = (struct UDPHeader*)malloc(sizeof(struct UDPHeader));
+    struct UDPHeader* udphdr = (struct UDPHeader*)calloc(1, sizeof(struct UDPHeader));
     udphdr->source_port = 10000; udphdr->dest_port = 10010;
 
     payload_size = MTU - sizeof(*iphdr) - sizeof(*udphdr) - sizeof(*machdr);
@@ -89,6 +89,7 @@ void udp_msg_sender(struct sockaddr* dst) {
     while (cnt < LOOP_COUNT) {
         cnt += 1;
         packet->ipheader = *iphdr; packet->udpheader = *udphdr; packet->macheader = *machdr;
+        packet->ipheader.header_checksum = ip_checksum(&packet->ipheader); // 填入 IP 表頭 checksum
 
         gettimeofday(&current_time, NULL);
         enqueue(&timestampQueue, &current_time); // 記錄發送時間

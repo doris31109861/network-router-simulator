@@ -143,6 +143,12 @@ void* tcp_receiver(void* argu) {
 			break; // 連線斷開
 		}
         gettimeofday(&current_time, NULL); // 記錄接收時間
+        // 驗證 IP 表頭 checksum（buffer 格式：MAC | IP | TCP | payload）
+        if (valread >= (int)(sizeof(MACHeader) + sizeof(IPHeader))) {
+            IPHeader ip;
+            memcpy(&ip, buffer + sizeof(MACHeader), sizeof(IPHeader));
+            if (!ip_checksum_ok(&ip)) printf("IPChecksum:BAD (TCP)\n");
+        }
         // 將資料放入 TCP 佇列
         enqueue(&tcpQueue, buffer, valread, &current_time, NULL, &qlength);
 
@@ -325,6 +331,7 @@ void* udp_sender(void* argu) {
 
         // --- 路由邏輯 ---
         struct IPHeader* ipH = &packet.ipheader;
+        if (!ip_checksum_ok(ipH)) printf("IPChecksum:BAD (UDP)\n"); // 表頭在途中被改壞
         // 根據虛擬 IP 決定發送目標
         if (ipH->destination_ip == CLIENT_VIRTUAL_IP) {
             sendto(router_fd, &packet, data_size, 0, (struct sockaddr*)&client_addr, sizeof(client_addr));
