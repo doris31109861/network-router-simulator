@@ -21,8 +21,16 @@ jobs:
       - name: Show output
         run: tail -n 15 logs/*.log
 
-      # 保留執行紀錄，可下載回來畫圖（scripts/plot_results.py）
+      # 把 p1p2 的 log 整理成 CSV 並畫圖
+      - name: Plot results
+        run: |
+          pip install matplotlib
+          python3 scripts/plot_results.py
+
+      # 保留執行紀錄與圖表，可從 Actions 頁面下載
       - uses: actions/upload-artifact@v4
         with:
-          name: simulation-logs
-          path: logs/*.log
+          name: simulation-results
+          path: |
+            logs/*.log
+            results/
