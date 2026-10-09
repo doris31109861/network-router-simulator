@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-09 — README 註明以 AI 協助
+
+- **內容**：README 開頭加上說明：2026/10 的整理、測試與改進是以 AI（Claude）協助完成，逐項紀錄見本檔。
+- **原因**：讓看 repo 的人清楚知道哪些部分是後來以 AI 協助完成的，與原本的作業區分。
+- **測試**：只改文件。
+
 ## 2026-10-09 — 計算並驗證 IP header checksum
 
 - **內容**：`packet.h` 新增 `ip_checksum()`／`ip_checksum_ok()`（RFC 1071 16-bit 一補數和）。server 送出 UDP 封包、client 送出 TCP 封包及回傳 UDP ACK（改了目的 IP）時填入 checksum；router 在 TCP 接收與 UDP 轉送前驗證，錯誤時印出 `IPChecksum:BAD`。server 的表頭改用 `calloc`、client 的 IP 表頭先 `memset`，避免未設定欄位是記憶體殘值。CI 檢查 router log 中沒有任何 BAD。

@@ -4,6 +4,9 @@
 
 [中文](#中文) | [English](#english)
 
+> 2026/10 以 AI（Claude）協助整理、測試與改進，逐項紀錄見 [CHANGELOG](CHANGELOG.md)。
+> Organized, tested and improved with AI assistance (Claude) in October 2026; see the [CHANGELOG](CHANGELOG.md) for every change.
+
 ---
 
 ## 中文
