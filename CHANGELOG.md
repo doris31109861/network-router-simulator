@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-09 — p1p2 三支程式補上檔案說明註解
+
+- **內容**：`p1p2/client.cpp`、`server.cpp`、`router.c` 開頭加上說明：各執行緒的角色、使用的 port、量測哪些指標（p2-throughput 版本原本就有完整檔頭）。
+- **原因**：統一各檔案的註解風格。
+- **測試**：只加註解；CI 重新編譯並執行模擬。
+
 ## 2026-10-09 — README 加入實驗結果圖表
 
 - **內容**：把 GitHub Actions 實際跑出來的結果（`docs/delay.png`、`docs/client_metrics.csv`、`docs/router_metrics.csv`）放進 repo，README 新增「結果分析」段落，說明 RTT、TCP／UDP 佇列排隊延遲的差異。

@@ -1,3 +1,11 @@
+/*
+ * router.c — 模擬網路中的 Router 節點（Part 1 + 2）
+ *
+ * 5 個執行緒：TCP 接收、TCP 發送、TCP ACK 轉送、UDP 接收、UDP 發送。
+ * 收到的封包放進 TCP / UDP 各自的執行緒安全環狀佇列（mutex + condition variable），
+ * 發送端每次出列都模擬 30ms 服務時間，並記錄排隊時間、排隊延遲與 EWMA 平均排隊延遲；
+ * 依 IP 表頭的虛擬目的 IP 決定轉送到 Server 或兩個 Client 之一。
+ */
 #include <pthread.h>     // 引入執行緒庫，用於多執行緒處理
 #include <unistd.h>      // 包含標準 POSIX 函式 (如 sleep, close)
 #include <stdlib.h>      // 標準庫 (malloc, exit 等)

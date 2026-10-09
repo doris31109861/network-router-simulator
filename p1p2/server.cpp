@@ -1,3 +1,10 @@
+/*
+ * server.cpp — 模擬網路中的 Server 節點（Part 1 + 2）
+ *
+ * TCP 執行緒：在 port 9000 等 Router 連線，收到 Client 的資料封包後原封不動送回（echo）作為 ACK。
+ * UDP 執行緒：送出 UDP 封包給 Client（經 Router 轉送），另一個執行緒接收 Client 回傳的 ACK，
+ *             以時間戳佇列計算每個封包的 RTT、ETE、EWMA 平均與吞吐量。
+ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>

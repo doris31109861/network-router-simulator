@@ -1,3 +1,10 @@
+/*
+ * client.cpp — 模擬網路中的 Client 節點（Part 1 + 2）
+ *
+ * TCP 執行緒：連到 Router（port 9002），自行組 MAC / IP / TCP 表頭後送出 LOOP_COUNT 個封包，
+ *             收到 Server 經 Router 轉回的 ACK 時，用時間戳佇列算出 RTT、ETE、EWMA 平均與吞吐量。
+ * UDP 執行緒：在 port 9003 接收 Server 經 Router 轉送來的 UDP 封包，並把 ACK 送回 Server 的虛擬 IP。
+ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
